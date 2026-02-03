@@ -23,31 +23,20 @@ Este es el **mejor cliente de Signatura en Go** jamás creado, acompañado de un
    - Helpers para consultar estado de documentos
    - Utilidades de codificación base64
 
-3. **`examples_test.go`**
-   - Ejemplos completos de todos los casos de uso
-   - Documentación ejecutable
-   - Patrones de best practices
-
-4. **`client_test.go`**
-   - Suite completa de tests unitarios
+3. **Tests** (en desarrollo)
+   - Suite de tests unitarios
    - Cobertura de casos edge
    - Tests de integración con mock server
    - Validación de errores y timeouts
 
-5. **`cmd/signatura-cli/main.go`**
-   - Aplicación CLI completamente funcional
-   - Ejemplos de uso real del cliente
-   - Interface amigable con emojis
-
 #### Características Destacadas
 
-✨ **Zero Dependencies** (solo stdlib de Go)  
-🔐 **Type-Safe** con structs bien definidos  
-📝 **Documentación Exhaustiva** en cada función  
-🧪 **Tests Comprehensivos** con >80% cobertura  
-⚡ **Context-Aware** para control de timeouts  
-🎯 **Helpers Útiles** para casos comunes  
-🚀 **Production-Ready** desde el día 1  
+✨ **Zero Dependencies** (solo stdlib de Go)
+🔐 **Type-Safe** con structs bien definidos
+📝 **Documentación Exhaustiva** en cada función
+⚡ **Context-Aware** para control de timeouts
+🎯 **Helpers Útiles** para casos comunes
+🚀 **Production-Ready** con validación de inputs  
 
 ### 🎨 Colección Postman
 
@@ -87,14 +76,14 @@ Este es el **mejor cliente de Signatura en Go** jamás creado, acompañado de un
 
 ```bash
 # Instalar
-go get github.com/signatura-client/signatura-go
+go get github.com/chetinchog/signatura
 
 # Usar
 package main
 
 import (
     "context"
-    "github.com/signatura-client/signatura-go"
+    "github.com/chetinchog/signatura"
 )
 
 func main() {
@@ -127,18 +116,15 @@ func main() {
 ## 📊 Estructura del Proyecto
 
 ```
-signatura-go/
+signatura/
 ├── client.go                    # ⭐ Cliente principal
 ├── helpers.go                   # 🔧 Funciones auxiliares
-├── examples_test.go             # 📚 Ejemplos ejecutables
-├── client_test.go               # 🧪 Tests unitarios
-├── go.mod                       # 📦 Dependencias
+├── go.mod                       # 📦 Module definition
+├── .gitignore                   # 🚫 Git ignore rules
 ├── LICENSE                      # 📄 MIT License
 ├── README.md                    # 📖 Documentación principal
+├── PROYECTO_COMPLETO.md        # 📋 Este archivo
 ├── POSTMAN_GUIDE.md            # 🎨 Guía de Postman
-├── cmd/
-│   └── signatura-cli/
-│       └── main.go             # 💻 CLI Application
 ├── Signatura_API_Collection.postman_collection.json
 └── Signatura_Production.postman_environment.json
 ```
@@ -310,10 +296,10 @@ pm.test("✓ Documento tiene firmas", function() {...});
 
 ## 🌟 Extras Incluidos
 
-1. **CLI Tool**: Aplicación de línea de comandos funcional
-2. **Tests**: Suite completa de pruebas
-3. **Examples**: Código ejecutable para aprender
-4. **Guides**: Guías paso a paso
+1. **Postman Collection**: Colección completa para testing
+2. **Comprehensive Docs**: Documentación exhaustiva
+3. **Helper Functions**: Utilidades para casos comunes
+4. **Input Validation**: Validación robusta de parámetros
 
 ## 🎉 Conclusión
 

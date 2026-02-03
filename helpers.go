@@ -22,12 +22,12 @@ func EncodeFileToBase64(filePath string) (string, error) {
 		return "", fmt.Errorf("failed to open file: %w", err)
 	}
 	defer file.Close()
-	
+
 	data, err := io.ReadAll(file)
 	if err != nil {
 		return "", fmt.Errorf("failed to read file: %w", err)
 	}
-	
+
 	return base64.StdEncoding.EncodeToString(data), nil
 }
 
@@ -52,11 +52,11 @@ func NewEmailValidation(email string, inviteByEmail bool) Signature {
 			Email: String(email),
 		},
 	}
-	
+
 	if inviteByEmail {
 		sig.InviteChannel = []string{InviteChannelEmail}
 	}
-	
+
 	return sig
 }
 
@@ -68,20 +68,20 @@ func NewEmailPhoneValidation(email string, phone *string, inviteByEmail bool) Si
 			Phone: phone,
 		},
 	}
-	
+
 	if inviteByEmail {
 		sig.InviteChannel = []string{InviteChannelEmail}
 	}
-	
+
 	return sig
 }
 
 // NewBiometricValidation creates a signature with biometric validation
 func NewBiometricValidation() Signature {
-	var emptyInterface interface{}
+	biometric := true
 	return Signature{
 		Validations: Validation{
-			Biometric: &emptyInterface,
+			Biometric: &biometric,
 		},
 	}
 }

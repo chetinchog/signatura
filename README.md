@@ -20,7 +20,7 @@ Un cliente Go elegante, robusto y completo para la API de Signatura. Integra fir
 ## 📦 Instalación
 
 ```bash
-go get github.com/signatura-client/signatura-go
+go get github.com/chetinchog/signatura
 ```
 
 ## 🚀 Inicio Rápido
@@ -32,8 +32,8 @@ import (
     "context"
     "fmt"
     "log"
-    
-    "github.com/signatura-client/signatura-go"
+
+    "github.com/chetinchog/signatura"
 )
 
 func main() {
