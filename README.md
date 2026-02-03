@@ -105,6 +105,9 @@ doc, err := client.CreateDocument(context.Background(), signatura.CreateDocument
         signatura.NewBiometricValidation(),
     },
 })
+if err != nil {
+    log.Fatal(err)
+}
 
 // La URL de firma estará disponible inmediatamente
 fmt.Println("URL para firmar:", doc.Signatures[0].SigningURL)
@@ -173,9 +176,14 @@ result, err := client.ListDocuments(context.Background(), signatura.ListDocument
     Limit:        100,
     CreatedAfter: &thirtyDaysAgo,
 })
+if err != nil {
+    log.Fatal(err)
+}
 
 for _, doc := range result.Documents {
-    fmt.Printf("- %s (firmado: %s)\n", doc.Title, doc.CompletedAt.Format("02/01/2006"))
+    if doc.CompletedAt != nil {
+        fmt.Printf("- %s (firmado: %s)\n", doc.Title, doc.CompletedAt.Format("02/01/2006"))
+    }
 }
 ```
 
@@ -183,7 +191,11 @@ for _, doc := range result.Documents {
 
 ```go
 // Verificar que esté completado
-doc, _ := client.GetDocument(context.Background(), documentID)
+doc, err := client.GetDocument(context.Background(), documentID)
+if err != nil {
+    log.Fatal(err)
+}
+
 if !signatura.IsDocumentCompleted(doc) {
     log.Fatal("El documento aún no está completo")
 }
@@ -195,7 +207,9 @@ if err != nil {
 }
 
 // Guardar a archivo
-os.WriteFile("contrato-firmado.pdf", pdfBytes, 0644)
+if err := os.WriteFile("contrato-firmado.pdf", pdfBytes, 0644); err != nil {
+    log.Fatalf("Error guardando PDF: %v", err)
+}
 ```
 
 ### 7️⃣ Webhooks
@@ -213,28 +227,46 @@ func webhookHandler(w http.ResponseWriter, r *http.Request) {
     switch event.NotificationAction {
     case signatura.WebhookActionDocumentSigned:
         // Firmante completó su firma
-        fmt.Printf("Documento %s firmado por %s\n", 
+        fmt.Printf("Documento %s firmado por %s\n",
             event.DocumentID, event.SignatureID)
-        
+
         // Opcional: consultar estado actualizado
-        doc, _ := client.GetDocument(context.Background(), event.DocumentID)
-        if signatura.IsDocumentCompleted(doc) {
-            // Todos firmaron - descargar documento
-            downloadAndProcess(doc.ID)
+        doc, err := client.GetDocument(context.Background(), event.DocumentID)
+        if err != nil {
+            log.Printf("Error obteniendo documento: %v", err)
+            w.WriteHeader(http.StatusInternalServerError)
+            return
         }
-        
+
+        if signatura.IsDocumentCompleted(doc) {
+            // Todos firmaron - procesar documento
+            log.Printf("Documento %s completado, descargando...", doc.ID)
+
+            pdfData, err := client.DownloadDocument(context.Background(), doc.ID)
+            if err != nil {
+                log.Printf("Error descargando: %v", err)
+                return
+            }
+
+            // Guardar o procesar el PDF según tu lógica de negocio
+            _ = pdfData // Tu lógica aquí
+        }
+
     case signatura.WebhookActionSignatureDeclined:
         // Firmante rechazó la firma
-        fmt.Printf("Firma rechazada: %s\n", event.SignatureID)
-        handleRejection(event.DocumentID, event.SignatureID)
-        
+        log.Printf("Firma rechazada - Documento: %s, Firma: %s",
+            event.DocumentID, event.SignatureID)
+
+        // Implementa tu lógica de manejo de rechazo aquí
+
     case signatura.WebhookActionDocumentChange:
         // Cambió el estado del documento
-        fmt.Printf("Documento %s cambió a: %s\n", 
+        log.Printf("Documento %s cambió a: %s",
             event.DocumentID, event.NewStatus)
-            
+
         if event.NewStatus == signatura.DocumentStatusCompleted {
-            notifyCompletion(event.DocumentID)
+            log.Printf("Documento %s completado", event.DocumentID)
+            // Implementa tu lógica de notificación aquí
         }
     }
     
@@ -316,8 +348,28 @@ for {
     time.Sleep(5 * time.Minute) // Desperdicia llamadas API
 }
 
-// ✅ SÍ haz esto
-// Configura un webhook y procesa eventos en tiempo real
+// ✅ SÍ haz esto - Configura un webhook handler
+func webhookHandler(w http.ResponseWriter, r *http.Request) {
+    var event signatura.WebhookEvent
+    if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
+        http.Error(w, "Invalid payload", http.StatusBadRequest)
+        return
+    }
+
+    switch event.NotificationAction {
+    case signatura.WebhookActionDocumentSigned:
+        // Verificar si el documento está completo
+        doc, _ := client.GetDocument(context.Background(), event.DocumentID)
+        if signatura.IsDocumentCompleted(doc) {
+            processCompletedDocument(doc.ID)
+        }
+    }
+
+    w.WriteHeader(http.StatusOK)
+}
+
+// Registrar el webhook en tu servidor
+http.HandleFunc("/webhooks/signatura", webhookHandler)
 ```
 
 ```go
@@ -344,22 +396,33 @@ if err != nil {
 ```go
 // 4. Usar helpers para código más limpio
 if signatura.IsDocumentCompleted(doc) {
-    pdfData, _ := client.DownloadDocument(ctx, doc.ID)
-    saveToS3(pdfData)
+    pdfData, err := client.DownloadDocument(ctx, doc.ID)
+    if err != nil {
+        log.Printf("Error downloading: %v", err)
+        return
+    }
+
+    // Guardar el PDF
+    if err := os.WriteFile("contrato-firmado.pdf", pdfData, 0644); err != nil {
+        log.Printf("Error saving PDF: %v", err)
+    }
 }
 ```
 
 ## 🧪 Testing
 
 ```go
-// Ejemplo de test
+// Ejemplo de test usando solo stdlib (sin dependencias externas)
 func TestCreateDocument(t *testing.T) {
     client := signatura.New(signatura.Config{
         APIKey: os.Getenv("SIGNATURA_TEST_API_KEY"),
     })
-    
-    base64Content, _ := signatura.EncodeFileToBase64("testdata/sample.pdf")
-    
+
+    base64Content, err := signatura.EncodeFileToBase64("testdata/sample.pdf")
+    if err != nil {
+        t.Fatalf("Failed to encode file: %v", err)
+    }
+
     doc, err := client.CreateDocument(context.Background(), signatura.CreateDocumentRequest{
         Title:       "Test Document",
         FileContent: base64Content,
@@ -367,10 +430,18 @@ func TestCreateDocument(t *testing.T) {
             signatura.NewBiometricValidation(),
         },
     })
-    
-    require.NoError(t, err)
-    assert.NotEmpty(t, doc.ID)
-    assert.Equal(t, signatura.DocumentStatusPending, doc.Status)
+
+    if err != nil {
+        t.Fatalf("CreateDocument() error = %v", err)
+    }
+
+    if doc.ID == "" {
+        t.Error("Expected non-empty document ID")
+    }
+
+    if doc.Status != signatura.DocumentStatusPending {
+        t.Errorf("Status = %v, want %v", doc.Status, signatura.DocumentStatusPending)
+    }
 }
 ```
 
