@@ -77,7 +77,7 @@ func TestCreateDocument_Success(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(CreateDocumentResponse{
+		_ = json.NewEncoder(w).Encode(CreateDocumentResponse{
 			ID:     "doc-123",
 			Title:  req.Title,
 			Status: DocumentStatusPending,
@@ -178,7 +178,7 @@ func TestCreateDocument_ValidationErrors(t *testing.T) {
 func TestCreateDocument_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Error{
+		_ = json.NewEncoder(w).Encode(Error{
 			Code:    "INVALID_REQUEST",
 			Message: "Invalid file format",
 		})
@@ -243,7 +243,7 @@ func TestGetDocument_Success(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(GetDocumentResponse{
+		_ = json.NewEncoder(w).Encode(GetDocumentResponse{
 			ID:     "doc-123",
 			Title:  "Test Document",
 			Status: DocumentStatusPending,
@@ -281,7 +281,7 @@ func TestGetDocument_EmptyID(t *testing.T) {
 func TestGetDocument_NotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(Error{
+		_ = json.NewEncoder(w).Encode(Error{
 			Code:    "NOT_FOUND",
 			Message: "Document not found",
 		})
@@ -320,7 +320,7 @@ func TestListDocuments_Success(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(ListDocumentsResponse{
+		_ = json.NewEncoder(w).Encode(ListDocumentsResponse{
 			Documents: []GetDocumentResponse{
 				{ID: "doc-1", Status: DocumentStatusCompleted},
 				{ID: "doc-2", Status: DocumentStatusCompleted},
@@ -396,7 +396,7 @@ func TestDownloadDocument_Success(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write(expectedData)
+		_, _ = w.Write(expectedData)
 	}))
 	defer server.Close()
 
@@ -430,7 +430,7 @@ func TestDownloadDocument_EmptyID(t *testing.T) {
 func TestDownloadDocument_NotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Document not found"))
+		_, _ = w.Write([]byte("Document not found"))
 	}))
 	defer server.Close()
 
@@ -516,17 +516,20 @@ func TestHandleResponse_NilResponse(t *testing.T) {
 func TestHandleResponse_ErrorResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Error{
+		_ = json.NewEncoder(w).Encode(Error{
 			Code:    "VALIDATION_ERROR",
 			Message: "Invalid input",
 		})
 	}))
 	defer server.Close()
 
-	resp, _ := http.Get(server.URL)
+	resp, err := http.Get(server.URL)
+	if err != nil {
+		t.Fatalf("http.Get() error = %v", err)
+	}
 
 	var result interface{}
-	err := handleResponse(resp, &result)
+	err = handleResponse(resp, &result)
 
 	if err == nil {
 		t.Fatal("Expected error, got nil")
@@ -545,14 +548,17 @@ func TestHandleResponse_ErrorResponse(t *testing.T) {
 func TestHandleResponse_MalformedJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("invalid json{"))
+		_, _ = w.Write([]byte("invalid json{"))
 	}))
 	defer server.Close()
 
-	resp, _ := http.Get(server.URL)
+	resp, err := http.Get(server.URL)
+	if err != nil {
+		t.Fatalf("http.Get() error = %v", err)
+	}
 
 	var result GetDocumentResponse
-	err := handleResponse(resp, &result)
+	err = handleResponse(resp, &result)
 
 	if err == nil {
 		t.Error("Expected error for malformed JSON")

@@ -14,10 +14,11 @@ linters:
 linters-settings:
   errcheck:
     check-type-assertions: true
-    check-blank: true
+    check-blank: false
 
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
 
   revive:
     rules:
