@@ -2,6 +2,8 @@
 
 ![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![Coverage](https://img.shields.io/badge/coverage-90.5%25-brightgreen)
+![Tests](https://img.shields.io/badge/tests-50%2B%20passing-success)
 
 Un cliente Go elegante, robusto y completo para la API de Signatura. Integra firmas electrónicas con validación de identidad de forma sencilla y profesional.
 
@@ -14,8 +16,8 @@ Un cliente Go elegante, robusto y completo para la API de Signatura. Integra fir
 - 🔔 **Soporte para webhooks** con tipos fuertemente tipados
 - ⚡ **Context-aware** para timeouts y cancelaciones
 - 🎯 **Type-safe** con structs bien definidos
-- 🧪 **Ejemplos completos** y documentación exhaustiva
-- 🚀 **Zero dependencies** (solo stdlib + testing)
+- 🧪 **90.5% cobertura de tests** con más de 50 casos de prueba
+- 🚀 **Zero dependencies** (solo stdlib)
 
 ## 📦 Instalación
 
@@ -69,7 +71,7 @@ func main() {
     }
     
     fmt.Printf("✓ Documento creado: %s\n", doc.ID)
-    fmt.Printf("  URL de firma: %s\n", doc.Signatures[0].SigningURL)
+    fmt.Printf("  URL de firma: %s\n", doc.Signatures[0].URL)
 }
 ```
 
@@ -110,7 +112,7 @@ if err != nil {
 }
 
 // La URL de firma estará disponible inmediatamente
-fmt.Println("URL para firmar:", doc.Signatures[0].SigningURL)
+fmt.Println("URL para firmar:", doc.Signatures[0].URL)
 ```
 
 ### 3️⃣ Múltiples Firmantes
@@ -181,8 +183,9 @@ if err != nil {
 }
 
 for _, doc := range result.Documents {
-    if doc.CompletedAt != nil {
-        fmt.Printf("- %s (firmado: %s)\n", doc.Title, doc.CompletedAt.Format("02/01/2006"))
+    fmt.Printf("- %s (estado: %s)\n", doc.Title, doc.Status)
+    if doc.CreationDate != nil {
+        fmt.Printf("  Creado: %s\n", doc.CreationDate.Format("02/01/2006"))
     }
 }
 ```
@@ -310,6 +313,40 @@ doc, err := client.CreateDocument(ctx, request)
 | **Biométrica** | `BI` | Validación por reconocimiento facial |
 | **AFIP** | `AF` | Validación con clave fiscal AFIP |
 
+### Estructura de Validaciones en Respuestas
+
+Cuando la API devuelve información sobre validaciones, usa una estructura anidada:
+
+```go
+type ValidationValue struct {
+    Validated bool        `json:"validated"`  // Si la validación fue completada
+    Value     interface{} `json:"value"`      // El valor validado (email, phone, etc.)
+}
+
+type ValidationResponse struct {
+    Email      *ValidationValue `json:"EM,omitempty"`
+    Phone      *ValidationValue `json:"PH,omitempty"`
+    Biometric  *ValidationValue `json:"BI,omitempty"`
+    AFIP       *ValidationValue `json:"AF,omitempty"`
+}
+```
+
+Ejemplo de respuesta:
+```json
+{
+  "validations": {
+    "EM": {
+      "validated": true,
+      "value": "usuario@ejemplo.com"
+    },
+    "PH": {
+      "validated": false,
+      "value": null
+    }
+  }
+}
+```
+
 ## 📡 Canales de Invitación
 
 - `EM` - Email (se envía enlace de firma por correo)
@@ -324,6 +361,15 @@ Si no especificas `invite_channel`, debes compartir manualmente la URL de firma.
 | **Pendiente** | `PE` | Esperando firmas |
 | **Completado** | `CO` | Todas las firmas completadas |
 | **Cancelado** | `CA` | Documento cancelado |
+
+## ✍️ Estados de Firma
+
+| Estado | Código | Descripción |
+|--------|--------|-------------|
+| **Invitado** | `IN` | Firmante invitado, pendiente de acción |
+| **Firmado** | `SI` | Firma completada exitosamente |
+| **Rechazado** | `DE` | Firmante rechazó la firma |
+| **Pendiente** | `PE` | En proceso de firma |
 
 ## 🔔 Eventos de Webhook
 
@@ -446,6 +492,14 @@ func TestCreateDocument(t *testing.T) {
 ```
 
 ## 📖 Documentación Adicional
+
+### En este Repositorio
+
+- [CHANGELOG.md](CHANGELOG.md) - Historial de cambios y versiones
+- [SECURITY.md](SECURITY.md) - Política de seguridad y mejores prácticas
+- [CLAUDE.md](CLAUDE.md) - Guía para asistentes AI
+
+### Documentación de Signatura
 
 - [Guía de Inicio Rápido de Signatura](https://docs.signatura.co/docs/intro)
 - [Límites de API](https://docs.signatura.co/docs/rate-limiting)
