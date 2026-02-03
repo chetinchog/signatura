@@ -47,6 +47,18 @@ const (
 	// DocumentStatusCanceled represents a canceled document
 	DocumentStatusCanceled = "CA"
 
+	// SignatureStatusInvited represents an invited signature
+	SignatureStatusInvited = "IN"
+
+	// SignatureStatusSigned represents a signed signature
+	SignatureStatusSigned = "SI"
+
+	// SignatureStatusDeclined represents a declined signature
+	SignatureStatusDeclined = "DE"
+
+	// SignatureStatusPending represents a pending signature
+	SignatureStatusPending = "PE"
+
 	// WebhookActionDocumentSigned represents a signed document webhook
 	WebhookActionDocumentSigned = "DS"
 
@@ -96,7 +108,21 @@ func New(config Config) *Client {
 	}
 }
 
-// Validation represents identity validation requirements for a signature
+// ValidationValue represents a validation field value from the API response
+type ValidationValue struct {
+	Validated bool        `json:"validated"`
+	Value     interface{} `json:"value"`
+}
+
+// ValidationResponse represents the validation fields in API responses
+type ValidationResponse struct {
+	Email      *ValidationValue `json:"EM,omitempty"`
+	Phone      *ValidationValue `json:"PH,omitempty"`
+	Biometric  *ValidationValue `json:"BI,omitempty"`
+	AFIP       *ValidationValue `json:"AF,omitempty"`
+}
+
+// Validation represents identity validation requirements for creating a signature
 type Validation struct {
 	// Email validation (EM) - email address for validation
 	Email *string `json:"EM,omitempty"`
@@ -144,43 +170,55 @@ type CreateDocumentRequest struct {
 
 // SignatureResponse represents a signature in the API response
 type SignatureResponse struct {
-	ID            string                 `json:"id"`
-	Status        string                 `json:"status"`
-	SignerName    string                 `json:"signer_name,omitempty"`
-	SigningURL    string                 `json:"signing_url,omitempty"`
-	Validations   Validation             `json:"validations"`
-	InviteChannel []string               `json:"invite_channel,omitempty"`
-	SignedAt      *time.Time             `json:"signed_at,omitempty"`
-	DeclinedAt    *time.Time             `json:"declined_at,omitempty"`
-	Metadata      map[string]interface{} `json:"metadata,omitempty"`
+	ID            string              `json:"id"`
+	Status        string              `json:"status"`
+	SignerName    string              `json:"signer_name,omitempty"`
+	URL           string              `json:"url,omitempty"`
+	Validations   ValidationResponse  `json:"validations"`
+	InviteChannel []string            `json:"invite_channel,omitempty"`
+	CreatedDate   *time.Time          `json:"created_date,omitempty"`
+	SignedAt      *time.Time          `json:"signed_at,omitempty"`
+	DeclinedAt    *time.Time          `json:"declined_at,omitempty"`
 }
 
 // CreateDocumentResponse represents the response from creating a document
 type CreateDocumentResponse struct {
-	ID         string                 `json:"id"`
-	Title      string                 `json:"title"`
-	Status     string                 `json:"status"`
-	Signatures []SignatureResponse    `json:"signatures"`
-	CreatedAt  time.Time              `json:"created_at"`
-	UpdatedAt  time.Time              `json:"updated_at"`
-	ExpiresAt  *time.Time             `json:"expires_at,omitempty"`
-	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	ID           string               `json:"id"`
+	Title        string               `json:"title"`
+	Status       string               `json:"status"`
+	Signatures   []SignatureResponse  `json:"signatures"`
+	CreationDate *time.Time           `json:"creation_date,omitempty"`
+	Archived     bool                 `json:"archived"`
+	CancelReason *string              `json:"cancel_reason"`
+	FileHash     string               `json:"file_hash,omitempty"`
+	FileName     string               `json:"file_name,omitempty"`
+	Settings     *DocumentSettings    `json:"settings,omitempty"`
+	TinyID       string               `json:"tiny_id,omitempty"`
+	TinyURL      string               `json:"tiny_url,omitempty"`
+}
+
+// DocumentSettings represents document configuration settings
+type DocumentSettings struct {
+	CompleteURL         *string `json:"complete_url"`
+	IncludeDocumentURL  bool    `json:"include_document_url"`
+	MustView            bool    `json:"must_view"`
+	RequiredSignatures  int     `json:"required_signatures"`
 }
 
 // GetDocumentResponse represents the response from getting a document
 type GetDocumentResponse struct {
-	ID            string                 `json:"id"`
-	Title         string                 `json:"title"`
-	Status        string                 `json:"status"`
-	Signatures    []SignatureResponse    `json:"signatures"`
-	CreatedAt     time.Time              `json:"created_at"`
-	UpdatedAt     time.Time              `json:"updated_at"`
-	CompletedAt   *time.Time             `json:"completed_at,omitempty"`
-	CanceledAt    *time.Time             `json:"canceled_at,omitempty"`
-	ExpiresAt     *time.Time             `json:"expires_at,omitempty"`
-	Metadata      map[string]interface{} `json:"metadata,omitempty"`
-	DownloadURL   string                 `json:"download_url,omitempty"`
-	AuditTrailURL string                 `json:"audit_trail_url,omitempty"`
+	ID           string               `json:"id"`
+	Title        string               `json:"title"`
+	Status       string               `json:"status"`
+	Signatures   []SignatureResponse  `json:"signatures"`
+	CreationDate *time.Time           `json:"creation_date,omitempty"`
+	Archived     bool                 `json:"archived"`
+	CancelReason *string              `json:"cancel_reason"`
+	FileHash     string               `json:"file_hash,omitempty"`
+	FileName     string               `json:"file_name,omitempty"`
+	Settings     *DocumentSettings    `json:"settings,omitempty"`
+	TinyID       string               `json:"tiny_id,omitempty"`
+	TinyURL      string               `json:"tiny_url,omitempty"`
 }
 
 // ListDocumentsParams represents query parameters for listing documents
@@ -203,10 +241,10 @@ type ListDocumentsParams struct {
 
 // ListDocumentsResponse represents the response from listing documents
 type ListDocumentsResponse struct {
-	Documents  []GetDocumentResponse `json:"documents"`
-	TotalCount int                   `json:"total_count"`
-	Limit      int                   `json:"limit"`
-	Offset     int                   `json:"offset"`
+	Documents  []GetDocumentResponse `json:"results"`
+	TotalCount int                   `json:"count"`
+	Next       *string               `json:"next"`
+	Previous   *string               `json:"previous"`
 }
 
 // WebhookEvent represents a webhook notification from Signatura

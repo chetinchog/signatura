@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 func TestString(t *testing.T) {
@@ -270,13 +269,12 @@ func TestIsDocumentCanceled(t *testing.T) {
 }
 
 func TestGetSignedSignatures(t *testing.T) {
-	now := time.Now()
 	doc := &GetDocumentResponse{
 		Signatures: []SignatureResponse{
-			{ID: "1", SignedAt: &now},
-			{ID: "2", SignedAt: nil},
-			{ID: "3", SignedAt: &now},
-			{ID: "4", DeclinedAt: &now},
+			{ID: "1", Status: SignatureStatusSigned},
+			{ID: "2", Status: SignatureStatusPending},
+			{ID: "3", Status: SignatureStatusSigned},
+			{ID: "4", Status: SignatureStatusDeclined},
 		},
 	}
 
@@ -286,20 +284,19 @@ func TestGetSignedSignatures(t *testing.T) {
 	}
 
 	for _, sig := range signed {
-		if sig.SignedAt == nil {
-			t.Errorf("Expected all signatures to have SignedAt set")
+		if sig.Status != SignatureStatusSigned {
+			t.Errorf("Expected all signatures to have status SignatureStatusSigned")
 		}
 	}
 }
 
 func TestGetPendingSignatures(t *testing.T) {
-	now := time.Now()
 	doc := &GetDocumentResponse{
 		Signatures: []SignatureResponse{
-			{ID: "1", SignedAt: &now},
-			{ID: "2", SignedAt: nil, DeclinedAt: nil},
-			{ID: "3", SignedAt: nil, DeclinedAt: nil},
-			{ID: "4", DeclinedAt: &now},
+			{ID: "1", Status: SignatureStatusSigned},
+			{ID: "2", Status: SignatureStatusPending},
+			{ID: "3", Status: SignatureStatusInvited},
+			{ID: "4", Status: SignatureStatusDeclined},
 		},
 	}
 
@@ -309,20 +306,19 @@ func TestGetPendingSignatures(t *testing.T) {
 	}
 
 	for _, sig := range pending {
-		if sig.SignedAt != nil || sig.DeclinedAt != nil {
-			t.Errorf("Expected pending signatures to have nil SignedAt and DeclinedAt")
+		if sig.Status != SignatureStatusPending && sig.Status != SignatureStatusInvited {
+			t.Errorf("Expected pending signatures to have status Pending or Invited, got %s", sig.Status)
 		}
 	}
 }
 
 func TestGetDeclinedSignatures(t *testing.T) {
-	now := time.Now()
 	doc := &GetDocumentResponse{
 		Signatures: []SignatureResponse{
-			{ID: "1", SignedAt: &now},
-			{ID: "2", SignedAt: nil, DeclinedAt: nil},
-			{ID: "3", DeclinedAt: &now},
-			{ID: "4", DeclinedAt: &now},
+			{ID: "1", Status: SignatureStatusSigned},
+			{ID: "2", Status: SignatureStatusPending},
+			{ID: "3", Status: SignatureStatusDeclined},
+			{ID: "4", Status: SignatureStatusDeclined},
 		},
 	}
 
@@ -332,8 +328,8 @@ func TestGetDeclinedSignatures(t *testing.T) {
 	}
 
 	for _, sig := range declined {
-		if sig.DeclinedAt == nil {
-			t.Errorf("Expected all declined signatures to have DeclinedAt set")
+		if sig.Status != SignatureStatusDeclined {
+			t.Errorf("Expected all declined signatures to have status SignatureStatusDeclined")
 		}
 	}
 }

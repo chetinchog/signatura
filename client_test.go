@@ -326,8 +326,6 @@ func TestListDocuments_Success(t *testing.T) {
 				{ID: "doc-2", Status: DocumentStatusCompleted},
 			},
 			TotalCount: 2,
-			Limit:      10,
-			Offset:     0,
 		})
 	}))
 	defer server.Close()

@@ -114,7 +114,7 @@ func IsDocumentCanceled(doc *GetDocumentResponse) bool {
 func GetSignedSignatures(doc *GetDocumentResponse) []SignatureResponse {
 	var signed []SignatureResponse
 	for _, sig := range doc.Signatures {
-		if sig.SignedAt != nil {
+		if sig.Status == SignatureStatusSigned {
 			signed = append(signed, sig)
 		}
 	}
@@ -125,7 +125,7 @@ func GetSignedSignatures(doc *GetDocumentResponse) []SignatureResponse {
 func GetPendingSignatures(doc *GetDocumentResponse) []SignatureResponse {
 	var pending []SignatureResponse
 	for _, sig := range doc.Signatures {
-		if sig.SignedAt == nil && sig.DeclinedAt == nil {
+		if sig.Status == SignatureStatusPending || sig.Status == SignatureStatusInvited {
 			pending = append(pending, sig)
 		}
 	}
@@ -136,7 +136,7 @@ func GetPendingSignatures(doc *GetDocumentResponse) []SignatureResponse {
 func GetDeclinedSignatures(doc *GetDocumentResponse) []SignatureResponse {
 	var declined []SignatureResponse
 	for _, sig := range doc.Signatures {
-		if sig.DeclinedAt != nil {
+		if sig.Status == SignatureStatusDeclined {
 			declined = append(declined, sig)
 		}
 	}
