@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-02-03
+
+### Added
+- Coverage and test badges in README (90.5%, 50+ tests)
+- Documentation of `ValidationValue` and `ValidationResponse` structures
+- Signature status codes documentation (IN, SI, DE, PE)
+- CHANGELOG.md with comprehensive release notes
+- SECURITY.md with security policy and best practices
+- References to all documentation files in README
+
+### Fixed
+- README field name errors: `SigningURL` → `URL`
+- Removed references to non-existent `CompletedAt` field
+- ListDocuments example now uses correct fields (`CreationDate`, `Status`)
+- All documentation examples validated against real API
+
+### Changed
+- Updated README badges to reflect accurate metrics
+- Improved documentation organization and structure
+- Makefile now excludes examples/ directory from build targets
+
 ## [1.0.0] - 2026-02-03
 
 ### Added
@@ -62,4 +83,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.0.1]: https://github.com/chetinchog/signatura/releases/tag/v1.0.1
 [1.0.0]: https://github.com/chetinchog/signatura/releases/tag/v1.0.0
